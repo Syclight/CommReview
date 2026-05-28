@@ -1,0 +1,18 @@
+{
+  "_comment": "参考模板，仅供阅读。实际钩子配置由 install.py 写入 ~/.claude/settings.json，此文件不会被 Claude Code 直接加载。",
+  "description": "CommReview — 在权限提示时用 AI 解释 Bash 命令含义",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"INSTALL_DIR/hooks/python_finder.sh\" \"INSTALL_DIR/hooks/comm_review.py\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
