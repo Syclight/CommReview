@@ -1,163 +1,169 @@
 # CommReview
 
-> 让 Claude Code 的每一条命令都清晰可见
+> Make every command of Claude Code clearly !
 
-CommReview 是一个 Claude Code Hook，在 Claude 请求执行 Bash 命令时，**自动用 AI 解释命令的含义、安全性和执行意图**，帮助用户做出知情判断。
+[CN简体中文版](./README_CN.md)
+
+CommReview is a Claude Code hook that automatically uses AI to explain the meaning, safety level, and intent of Bash commands before Claude Code runs them, helping users make informed decisions.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue) ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
-## 效果预览
+## Preview
 
-用户在权限提示选择「允许」后、命令实际执行前，会看到：
+After the user selects **Allow** in the permission prompt, but before the command is actually executed, CommReview displays an explanation like this:
 
-```
-━━━ CommReview 命令解释 ━━━
+```text
+━━━ CommReview Command Explanation ━━━
 $ rm -rf ./dist
 
-🟠 安全性: 中等风险（可能修改文件或安装软件）
-📖 含义: 递归删除当前目录下的 dist 文件夹及其所有内容。
-🎯 意图: AI 助手正在清理项目的构建输出目录，准备重新构建。
-⚠️ 注意: 此操作会永久删除 dist 目录中的所有文件，无法撤销。
-━━━━━━━━━━━━━━━━━━━━━━━━━
+🟠 Safety: Medium risk (may modify files or install software)
+📖 Meaning: Recursively deletes the dist folder in the current directory and all of its contents.
+🎯 Intent: The AI assistant is cleaning the project's build output directory before rebuilding.
+⚠️ Note: This operation permanently deletes all files in the dist directory and cannot be undone.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-安全等级一目了然：
+Safety levels are easy to scan:
 
-| 图标 | 等级 | 示例命令 |
-|------|------|----------|
-| ✅ | 安全（只读操作） | `ls`、`cat`、`git log` |
-| 🟡 | 低风险 | `mkdir`、`git add`、`echo` |
-| 🟠 | 中等风险 | `npm install`、`git commit`、文件写入 |
-| 🔴 | 高风险 | `rm -rf`、`chmod 777`、`curl \| sh` |
+| Icon | Level | Example Commands |
+|------|-------|------------------|
+| ✅ | Safe (read-only operations) | `ls`, `cat`, `git log` |
+| 🟡 | Low risk | `mkdir`, `git add`, `echo` |
+| 🟠 | Medium risk | `npm install`, `git commit`, file writes |
+| 🔴 | High risk | `rm -rf`, `chmod 777`, `curl \| sh` |
 
-## 安装
+## Installation
 
-### 前提条件
+### Requirements
 
-- [Claude Code](https://claude.ai/code) 已安装
-- Python 3.10+（Windows 用户请从 [python.org](https://python.org) 安装，**不要**用 Microsoft Store 版本）
-- AI 模型的访问凭据（见下方模型配置）
+- [Claude Code](https://claude.ai/code) installed
+- Python 3.10+ (Windows users should install it from [python.org](https://python.org), **not** from the Microsoft Store)
+- Access credentials for an AI model provider (see [Model Configuration](#model-configuration))
 
-### 步骤
+### Steps
 
-**1. 克隆仓库**
+**1. Clone the repository**
 
 ```bash
 git clone https://github.com/Syclight/CommReview.git
 cd CommReview
 ```
 
-**2. 运行安装脚本**
+**2. Run the installer**
 
 ```bash
 python install.py
 ```
 
-安装过程中会交互式配置使用的 AI 模型（见下方），完成后脚本会自动：
-- 将 Hook 文件复制到 `~/.claude/plugins/local/comm-review/`
-- 将模型配置写入 `~/.claude/plugins/local/comm-review/config.json`
-- 将 PreToolUse 钩子写入 `~/.claude/settings.json`
+During installation, the script interactively configures the AI model provider. When finished, it automatically:
 
-**3. 重启 Claude Code**
+- Copies the hook files to `~/.claude/plugins/local/comm-review/`
+- Writes the model configuration to `~/.claude/plugins/local/comm-review/config.json`
+- Adds the PreToolUse hook to `~/.claude/settings.json`
 
-关闭并重新打开 Claude Code，配置即刻生效。
+**3. Restart Claude Code**
 
-> **在 Claude Code 中安装**：在输入框输入 `! python install.py` 直接运行。
+Close and reopen Claude Code for the configuration to take effect.
 
-## 模型配置
+> **Install from inside Claude Code**: enter `! python install.py` in the input box.
 
-安装时会提示选择模型，支持两类接口：
+## Model Configuration
 
-### 1. Anthropic Claude（推荐）
+The installer prompts you to choose a model provider. Two types of interfaces are supported.
 
-认证优先级：
-1. 环境变量 `ANTHROPIC_AUTH_TOKEN`
-2. 环境变量 `ANTHROPIC_API_KEY`
-3. 自动读取 `~/.claude/.credentials.json`（`claude login` 后自动存在）
+### 1. Anthropic Claude (recommended)
 
-### 2. OpenAI 兼容接口
+Authentication priority:
 
-支持 OpenAI、Azure OpenAI、DeepSeek、本地模型（Ollama 等）任何兼容 OpenAI Chat Completions API 的服务。
+1. `ANTHROPIC_AUTH_TOKEN` environment variable
+2. `ANTHROPIC_API_KEY` environment variable
+3. Automatic loading from `~/.claude/.credentials.json` (created after `claude login`)
 
-需要提前设置对应的 API Key （默认 OPENAI_API_KEY）环境变量。
+### 2. OpenAI-Compatible APIs
 
-### 重新配置模型
+CommReview supports OpenAI, Azure OpenAI, DeepSeek, local models such as Ollama, and any service compatible with the OpenAI Chat Completions API.
 
-重新运行 `python install.py` 即可覆盖现有配置。
+Set the corresponding API key environment variable beforehand. The default is `OPENAI_API_KEY`.
 
-## 工作原理
+### Reconfigure the Model
 
-CommReview 利用 Claude Code 的 **PreToolUse 钩子**机制：
+Run `python install.py` again to overwrite the existing configuration.
 
+## How It Works
+
+CommReview uses Claude Code's **PreToolUse hook** mechanism:
+
+```text
+Claude wants to execute a Bash command
+       ↓
+The user sees the permission prompt and selects "Allow"
+       ↓
+The PreToolUse hook is triggered
+       ↓
+comm_review.py reads config.json and calls the configured AI model (~1-3 seconds)
+       ↓
+It generates an explanation (meaning + safety + intent)
+       ↓
+The explanation is displayed to the user as a systemMessage
+       ↓
+The command is executed
 ```
-Claude 想执行 Bash 命令
-       ↓
-用户看到权限提示，选择「允许」
-       ↓
-PreToolUse 钩子触发
-       ↓
-comm_review.py 读取 config.json，调用配置的 AI 模型（~1-3 秒）
-       ↓
-生成中文解释（含义 + 安全性 + 意图）
-       ↓
-以 systemMessage 展示给用户
-       ↓
-命令实际执行
-```
 
-- **超时**：8 秒 API 调用超时 + 15 秒钩子总超时
-- **降级**：任何错误（无网络、无认证、超时）均静默跳过，不影响正常使用
+- **Timeouts**: 8-second API call timeout + 15-second total hook timeout
+- **Graceful fallback**: Any error, including network failure, missing authentication, or timeout, is silently skipped so Claude Code continues to work normally
 
-## 项目结构
+## Project Structure
 
-```
+```text
 CommReview/
 ├── hooks/
-│   ├── comm_review.py       # 主钩子脚本：拦截命令 → 调用 AI → 格式化输出
-│   └── python_finder.sh     # 跨平台 Python 解析器
-├── hooks.json               # 钩子配置结构模板
-├── install.py               # 自动安装脚本
-└── README.md
+│   ├── comm_review.py       # Main hook script: intercept command → call AI → format output
+│   └── python_finder.sh     # Cross-platform Python resolver
+├── hooks.json               # Hook configuration template for reference
+├── install.py               # Automatic installer
+├── README.MD
+└── README_CN.md
 ```
 
-安装后会额外生成：
+After installation, the following files are generated:
 
-```
+```text
 ~/.claude/plugins/local/comm-review/
-├── hooks/                   # 同上
-└── config.json              # 模型配置（由 install.py 生成）
+├── hooks/                   # Same as above
+└── config.json              # Model configuration generated by install.py
 ```
 
-## 卸载
+## Uninstall
 
 ```bash
 rm -rf ~/.claude/plugins/local/comm-review/
 ```
 
-然后手动编辑 `~/.claude/settings.json`，删除 `hooks.PreToolUse` 中包含 `comm_review.py` 的条目。
+Then manually edit `~/.claude/settings.json` and remove the entry under `hooks.PreToolUse` that contains `comm_review.py`.
 
-## 常见问题
+## FAQ
 
-**Q: 选择「允许」后没有显示解释，命令直接执行了？**
+**Q: After selecting "Allow", no explanation appears and the command runs directly. Why?**
 
-可能原因：
-1. 认证不可用（未登录 Claude Code，且未设置对应的 API Key 环境变量）
-2. 网络问题导致 API 调用超时
-3. Python 未正确安装（Windows 用户检查是否为 Microsoft Store 版本）
+Possible causes:
 
-CommReview 设计为静默降级，以上情况不会报错，Claude Code 正常工作不受影响。
+1. Authentication is unavailable (Claude Code is not logged in and the corresponding API key environment variable is not set)
+2. A network issue caused the API call to time out
+3. Python is not installed correctly (Windows users should check whether they installed the Microsoft Store version)
 
-**Q: 会拖慢 Claude Code 的速度吗？**
+CommReview is designed to fail silently in these cases, so Claude Code continues working normally.
 
-取决于所配置的模型，通常在 1-3 秒内完成。Hook 仅对 Bash 命令生效，文件读写等操作不受影响。
+**Q: Will this slow down Claude Code?**
 
-**Q: 支持英文输出吗？**
+It depends on the configured model, but explanations usually complete within 1-3 seconds. The hook only applies to Bash commands; file reads, file writes, and other tools are unaffected.
 
-目前默认输出中文。如需英文，修改 `hooks/comm_review.py` 中的 `EXPLAIN_PROMPT` 变量，将提示词改为英文即可。
+**Q: Does CommReview support English output?**
 
-**Q: 命令内容会被发送到外部吗？**
+The default output is currently Chinese. To use English output, edit the `EXPLAIN_PROMPT` variable in `hooks/comm_review.py` and change the prompt to English.
 
-是的，命令内容会发送至所配置的 AI 服务 API 以生成解释。使用 Anthropic Claude 时与 Claude Code 本身使用相同的 API 端点和认证。
+**Q: Will command contents be sent to an external service?**
+
+Yes. Command contents are sent to the configured AI service API to generate the explanation. When using Anthropic Claude, CommReview uses the same API endpoint and authentication as Claude Code itself.
 
 ## License
 
