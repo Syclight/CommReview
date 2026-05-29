@@ -1,10 +1,10 @@
 {
-  "_comment": "参考模板，仅供阅读。实际钩子配置由 install.py 写入 ~/.claude/settings.json，此文件不会被 Claude Code 直接加载。",
-  "description": "CommReview — 在权限提示时用 AI 解释 Bash 命令含义",
+  "_comment": "参考模板，仅供阅读。实际钩子配置由 install.py 写入 ~/.claude/settings.json，此文件不会被 Claude Code 直接加载。matcher 由安装时选择的拦截范围决定（工具名以 | 分隔的正则）。",
+  "description": "CommReview — 在权限提示时用 AI 解释本地操作（Shell 命令、文件写入/编辑等）的含义",
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell|Write|Edit|NotebookEdit",
         "hooks": [
           {
             "type": "command",

@@ -24,6 +24,60 @@ CLAUDE_MODELS = {
 
 DEFAULT_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 
+# 拦截范围预设。只读类工具（Read/Glob/Grep）会让每次读取/搜索都增加 AI 延迟，
+# 因此默认不包含，按需选择。
+SCOPE_PRESETS = {
+    "1": (
+        ["Bash", "PowerShell", "Write", "Edit", "NotebookEdit"],
+        "Shell + 写入类（推荐）：Bash/PowerShell 命令 + 文件写入/编辑",
+    ),
+    "2": (
+        ["Bash", "PowerShell", "Write", "Edit", "NotebookEdit", "Read"],
+        "Shell + 写入 + 读取：额外拦截文件读取（每次读文件会慢 1-3 秒）",
+    ),
+    "3": (
+        ["Bash", "PowerShell", "Write", "Edit", "NotebookEdit", "Read", "Glob", "Grep"],
+        "全部操作：再加上 Glob/Grep 搜索（覆盖最全，整体最慢）",
+    ),
+}
+
+DEFAULT_SCOPE = "1"
+
+LANGUAGES = {
+    "1": ("zh", "中文（默认）"),
+    "2": ("en", "English"),
+}
+
+DEFAULT_LANGUAGE = "zh"
+
+
+def configure_scope() -> list:
+    """Interactive interception-scope selection. Returns list of tool names."""
+    print("─── 拦截范围 ───────────────────────────────")
+    print("CommReview 在哪些操作前显示解释？")
+    print()
+    for key, (_tools, label) in SCOPE_PRESETS.items():
+        print(f"  {key}. {label}")
+    print()
+    choice = input("请选择 [1-3]（默认 1）: ").strip() or DEFAULT_SCOPE
+    tools = SCOPE_PRESETS.get(choice, SCOPE_PRESETS[DEFAULT_SCOPE])[0]
+    print(f"✓ 拦截工具: {', '.join(tools)}")
+    print()
+    return tools
+
+
+def configure_language() -> str:
+    """Interactive output-language selection. Returns language code."""
+    print("─── 输出语言 ───────────────────────────────")
+    for key, (_code, label) in LANGUAGES.items():
+        print(f"  {key}. {label}")
+    print()
+    choice = input("请选择 [1/2]（默认 1）: ").strip() or "1"
+    language = LANGUAGES.get(choice, LANGUAGES["1"])[0]
+    print(f"✓ 输出语言: {language}")
+    print()
+    return language
+
 
 def configure_model() -> dict:
     """Interactive model configuration. Returns config dict."""
@@ -101,9 +155,13 @@ def main():
     print(f"Settings: {settings_path}")
     print()
 
-    # Model configuration
+    # Interactive configuration
     model_config = configure_model()
     print()
+    tools = configure_scope()
+    language = configure_language()
+    model_config["tools"] = tools
+    model_config["language"] = language
 
     # Copy plugin files
     if os.path.exists(install_dir):
@@ -136,9 +194,13 @@ def main():
         except (json.JSONDecodeError, OSError) as e:
             print(f"⚠ 警告: 无法读取 settings.json ({e})，将创建新文件")
 
+    # Matcher is a regex alternation over the configured tool names, so the
+    # hook fires for every operation in the chosen scope.
+    matcher = "|".join(tools)
+
     # Build the new hook entry
     new_hook_entry = {
-        "matcher": "Bash",
+        "matcher": matcher,
         "hooks": [
             {
                 "type": "command",
@@ -175,8 +237,10 @@ def main():
     print("✅ 安装完成！请重启 Claude Code 使 Hook 生效。")
     print()
     print("说明：")
-    print("  每次 Claude 执行 Bash 命令，用户选择允许后、命令实际执行前，")
-    print(f"  CommReview 会调用 {model_config['model']} 解释命令的含义与风险。")
+    print(f"  拦截范围: {', '.join(tools)}")
+    print(f"  输出语言: {language}")
+    print("  用户选择允许后、操作实际执行前，")
+    print(f"  CommReview 会调用 {model_config['model']} 解释该操作的含义与风险。")
     print()
     print("注意：")
     if model_config["provider"] == "anthropic":
