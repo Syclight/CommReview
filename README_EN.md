@@ -201,6 +201,14 @@ Possible causes:
 
 CommReview is designed to fail silently in these cases, so Claude Code continues working normally.
 
+**Q: Why does the explanation only appear after I select "Allow", and not before?**
+
+This is determined by the Claude Code **PreToolUse hook** mechanism that CommReview relies on, not a limitation of CommReview itself:
+
+1. **The hook's trigger timing is fixed**: In Claude Code's tool-call flow, the PreToolUse hook is only triggered after the user responds to the permission prompt (selects Allow) and before the operation actually runs. CommReview cannot make itself run *before* the permission prompt.
+2. **It never runs on denial**: If you select "Deny" in the permission prompt, the operation is aborted outright and the hook is never invoked, so no explanation is generated (nor needed).
+3. **The explanation lands in the "authorized but not yet executed" window**: The explanation you see therefore describes exactly the operation about to run, and if it changes your mind you can still abort before execution (e.g. Ctrl+C).
+
 **Q: Will this slow down Claude Code?**
 
 It depends on the configured model, but explanations usually complete within 1-3 seconds. The hook only applies to the configured interception scope — by default shell commands plus file writes/edits. Read-only operations are not intercepted by default, so normal reads are not slowed down.
